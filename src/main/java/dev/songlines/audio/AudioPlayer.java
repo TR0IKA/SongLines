@@ -211,7 +211,7 @@ public final class AudioPlayer {
             return;
         }
         if (state != AL10.AL_PLAYING && queued > 0) AL10.alSourcePlay(src); // буфер опустел — продолжаем
-        positionMs = (playedFrames + AL10.alGetSourcei(src, AL10.AL_SAMPLE_OFFSET)) * 1000L / Math.max(1, rate);
+        positionMs = (playedFrames + AL10.alGetSourcei(src, org.lwjgl.openal.AL11.AL_SAMPLE_OFFSET)) * 1000L / Math.max(1, rate);
     }
 
     private void finish() {
