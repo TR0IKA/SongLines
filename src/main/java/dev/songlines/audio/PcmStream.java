@@ -14,6 +14,5 @@ interface PcmStream extends AutoCloseable {
     int read(short[] dst) throws IOException;
 
     @Override
-    void clos
-  e();
+    void close();
 }
