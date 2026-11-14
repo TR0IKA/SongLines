@@ -90,7 +90,6 @@ public class MainScreen extends Screen {
             ctx.drawCenteredTextWithShadow(textRenderer, Text.literal(st), width / 2, 26, Songlines.playback.bridge.connected ? 0xFF7CFC9A : 0xFFFF8A8A);
         }
         String path = textRenderer.trimToWidth(Dirs.music.toString(), width - 10);
-        ctx.drawCenteredTextWithShadow(textRenderer, Text.literal(path), width / 2, height - 12, 0xFFA0
-                                       A0A0);
+        ctx.drawCenteredTextWithShadow(textRenderer, Text.literal(path), width / 2, height - 12, 0xFFA0A0A0);
     }
 }
