@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "songlines",
+  "version": "${version}",
+  "name": "Songlines",
+  "description": "Music player with synced lyric subtitles, cover card, folders, mp3/ogg and now-playing bridge.",
+  "authors": [Troika],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": { "client": ["dev.songlines.Songlines"] },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
