@@ -19,6 +19,7 @@ public class Songlines implements ClientModInitializer {
     public void onInitializeClient() {
         Dirs.init();
         cfg = Config.load();
+        Fonts.syncPack();
         playback = new Playback();
         Keys.register();
         HudElementRegistry.addLast(Identifier.of(ID, "overlay"), Hud::render);

@@ -5,9 +5,10 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.Camera;
 import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -15,14 +16,15 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Три режима: BOTTOM (строка внизу, с заливкой "караоке"), WORLD (строки всплывают в сцене и исчезают),
- * PANEL (несколько строк сбоку, текущая подсвечена).
- * WORLD привязан к направлению взгляда в момент появления: при повороте головы строка остаётся "в мире".
+ * Режимы: BOTTOM (строка внизу, "караоке"), WORLD (строки висят в мире и исчезают), PANEL (несколько строк сбоку).
+ * WORLD: строка появляется перед камерой в точке мира и остаётся там — при ходьбе и повороте виден параллакс,
+ * размер зависит от расстояния (как у таблички).
  */
 public final class Subtitles {
     private static final class Floating {
         String text;
-        float yaw, pitch;
+        double x, y, z;   // точка в мире
+        double rx, rz;    // вектор "вправо" в момент появления (для анимации SLIDE)
         long born;
     }
 
@@ -36,7 +38,7 @@ public final class Subtitles {
         lastIdx = -2;
     }
 
-    // ---------- такт: создаём всплывающие строки ----------
+    // ---------- такт: создаём строки в мире ----------
 
     public static void tick(MinecraftClient mc) {
         Config c = Songlines.cfg;
@@ -58,10 +60,17 @@ public final class Subtitles {
         Config c = Songlines.cfg;
         while (floating.size() >= Math.max(1, c.maxFloating)) floating.remove(0);
         Camera cam = mc.gameRenderer.getCamera();
+        float yaw = cam.getYaw() + (RND.nextFloat() * 2f - 1f) * c.spreadDegrees;
+        float pitch = MathHelper.clamp(cam.getPitch() + ((slot++ % 3) - 1) * 7f + (RND.nextFloat() * 2f - 1f) * 2f, -60f, 60f);
+        double yr = Math.toRadians(yaw), pr = Math.toRadians(pitch), d = Math.max(1, c.worldDistance);
+        Vec3d cp = cam.getCameraPos();
         Floating f = new Floating();
         f.text = text;
-        f.yaw = cam.getYaw() + (RND.nextFloat() * 2f - 1f) * c.spreadDegrees;
-        f.pitch = MathHelper.clamp(cam.getPitch() + ((slot++ % 3) - 1) * 7f + (RND.nextFloat() * 2f - 1f) * 2f, -60f, 60f);
+        f.x = cp.x + (-Math.sin(yr) * Math.cos(pr)) * d;
+        f.y = cp.y + (-Math.sin(pr)) * d;
+        f.z = cp.z + (Math.cos(yr) * Math.cos(pr)) * d;
+        f.rx = -Math.cos(yr);
+        f.rz = -Math.sin(yr);
         f.born = System.nanoTime();
         floating.add(f);
     }
@@ -86,8 +95,9 @@ public final class Subtitles {
     }
 
     private static MutableText styled(String s, boolean bold) {
-        MutableText t = Text.literal(s);
-        return bold ? t.formatted(Formatting.BOLD) : t;
+        Style st = Fonts.apply(Style.EMPTY);
+        if (bold) st = st.withBold(true);
+        return Text.literal(s).setStyle(st);
     }
 
     private static void bottom(DrawContext ctx, MinecraftClient mc, Config c, List<Lyrics.Line> lines, int idx, long pos) {
@@ -149,6 +159,17 @@ public final class Subtitles {
         TextRenderer tr = mc.textRenderer;
         int sw = ctx.getScaledWindowWidth(), sh = ctx.getScaledWindowHeight();
         Camera cam = mc.gameRenderer.getCamera();
+        Vec3d cp = cam.getCameraPos();
+
+        // базис камеры: вперёд / вправо / вверх (Minecraft: yaw 0 = +Z, pitch > 0 = вниз)
+        double yr = Math.toRadians(cam.getYaw()), pr = Math.toRadians(cam.getPitch());
+        double sY = Math.sin(yr), cY = Math.cos(yr), sP = Math.sin(pr), cP = Math.cos(pr);
+        double fx = -sY * cP, fy = -sP, fz = cY * cP;
+        double rx = -cY, rz = -sY;
+        double ux = -sY * sP, uy = cP, uz = cY * sP;
+        double tv = Math.tan(Math.toRadians(mc.options.getFov().getValue()) / 2.0);
+        double th = tv * sw / (double) sh;
+
         long now = System.nanoTime();
         float fin = Math.max(0f, c.fadeInSeconds), fout = Math.max(0f, c.fadeOutSeconds), hold = Math.max(0f, c.holdSeconds);
         float total = fin + hold + fout;
@@ -162,39 +183,49 @@ public final class Subtitles {
                 it.remove();
                 continue;
             }
-            float dyaw = MathHelper.wrapDegrees(f.yaw - cam.getYaw());
-            float dpitch = cam.getPitch() - f.pitch;
-            if (Math.abs(dyaw) > 80f || Math.abs(dpitch) > 70f) continue;
-            double tv = Math.tan(Math.toRadians(mc.options.getFov().getValue()) / 2.0);
-            double th = tv * sw / (double) sh;
-            float px = (float) (sw / 2.0 + Math.tan(Math.toRadians(dyaw)) / th * sw / 2.0);
-            float py = (float) (sh / 2.0 - Math.tan(Math.toRadians(dpitch)) / tv * sh / 2.0);
-
+            float prog = fin <= 0 ? 1f : MathHelper.clamp(t / fin, 0f, 1f);
+            double wx = f.x, wy = f.y, wz = f.z;
+            float sc = c.textScale;
+            String s = f.text;
             float a;
             if (c.anim == Config.Anim.NONE) a = 1f;
             else if (t < fin) a = t / fin;
             else if (t > fin + hold) a = fout <= 0 ? 0f : 1f - (t - fin - hold) / fout;
             else a = 1f;
-            if (a < 0.03f) continue;
-            float prog = fin <= 0 ? 1f : MathHelper.clamp(t / fin, 0f, 1f);
 
-            float sc = c.textScale, dx = 0, dy = 0;
-            String s = f.text;
             switch (c.anim) {
-                case RISE -> dy = -14f * easeOut(MathHelper.clamp(t / Math.max(0.01f, total), 0f, 1f));
+                case RISE -> wy += 0.6 * easeOut(MathHelper.clamp(t / Math.max(0.01f, total), 0f, 1f));
+                case SLIDE -> {
+                    double sh2 = -0.6 * (1f - easeOut(prog));
+                    wx += f.rx * sh2;
+                    wz += f.rz * sh2;
+                }
                 case POP -> sc *= 0.6f + 0.4f * easeOutBack(prog);
-                case SLIDE -> dx = -24f * (1f - easeOut(prog));
                 case TYPEWRITER -> {
                     int vis = (int) Math.ceil(s.length() * MathHelper.clamp(t / Math.max(0.3f, fin), 0f, 1f));
                     s = s.substring(0, Math.min(s.length(), vis));
-                    a = t > fin + hold ? a : 1f;
+                    if (t <= fin + hold) a = 1f;
                 }
                 default -> {
                 }
             }
+            if (a < 0.03f) continue;
+
+            double dx = wx - cp.x, dy = wy - cp.y, dz = wz - cp.z;
+            double zc = dx * fx + dy * fy + dz * fz;
+            if (zc < 0.3) continue; // позади камеры
+            double xc = dx * rx + dz * rz;
+            double yc = dx * ux + dy * uy + dz * uz;
+            float px = (float) (sw / 2.0 + (xc / zc) / th * sw / 2.0);
+            float py = (float) (sh / 2.0 - (yc / zc) / tv * sh / 2.0);
+            if (px < -300 || px > sw + 300 || py < -60 || py > sh + 60) continue;
+
+            if (c.worldScaleByDistance) {
+                sc *= MathHelper.clamp((float) (Math.max(1, c.worldDistance) / zc), 0.35f, 2.5f);
+            }
             Text full = styled(f.text, c.textBold);
             int w = tr.getWidth(full);
-            Gfx.push(ctx, px + dx - w * sc / 2f, py + dy - 4.5f * sc, sc);
+            Gfx.push(ctx, px - w * sc / 2f, py - 4.5f * sc, sc);
             if (c.textBackground) Gfx.fill(ctx, -3, -2, w + 3, 10, Gfx.argb(0x000000, 0.5f * a));
             Gfx.text(ctx, styled(s, c.textBold), 0, 0, Gfx.argb(rgb, a), c.textShadow);
             Gfx.pop(ctx);

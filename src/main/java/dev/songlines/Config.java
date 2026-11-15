@@ -35,6 +35,7 @@ public final class Config {
     public boolean textBackground = false;
     public boolean karaokeWipe = true;
     public int bottomOffset = 68;
+    public String font = "default"; // "default", "minecraft:uniform" или "songlines:<имя файла из songlines/fonts>"
 
     // всплывающие в мире
     public float holdSeconds = 3.0f;
@@ -43,6 +44,8 @@ public final class Config {
     public Anim anim = Anim.RISE;
     public int spreadDegrees = 18;
     public int maxFloating = 3;
+    public int worldDistance = 4;          // на каком расстоянии от камеры появляется строка (блоки)
+    public boolean worldScaleByDistance = true; // строка уменьшается/растёт с расстоянием, как табличка в мире
 
     // панель сбоку
     public boolean panelRight = false;
