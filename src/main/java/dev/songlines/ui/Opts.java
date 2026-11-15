@@ -8,6 +8,7 @@ import net.minecraft.client.gui.widget.SliderWidget;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
@@ -54,6 +55,21 @@ public final class Opts {
         return (x, y, w) -> ButtonWidget.builder(colorTxt(label, g.get()), b -> {
             s.accept(Config.nextColor(g.get()));
             b.setMessage(colorTxt(label, g.get()));
+        }).dimensions(x, y, w, 20).build();
+    }
+
+    private static String shortName(String id) {
+        int i = id.indexOf(':');
+        return i >= 0 ? id.substring(i + 1) : id;
+    }
+
+    /** Перебор значений из списка (например, шрифты). */
+    public static Opt choice(String label, Supplier<String> g, Consumer<String> s, Supplier<List<String>> values) {
+        return (x, y, w) -> ButtonWidget.builder(txt(label, shortName(g.get())), b -> {
+            List<String> v = values.get();
+            int i = v.indexOf(g.get());
+            s.accept(v.get((i + 1) % v.size()));
+            b.setMessage(txt(label, shortName(g.get())));
         }).dimensions(x, y, w, 20).build();
     }
 

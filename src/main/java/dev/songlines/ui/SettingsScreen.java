@@ -1,6 +1,7 @@
 package dev.songlines.ui;
 
 import dev.songlines.Config;
+import dev.songlines.Fonts;
 import dev.songlines.L;
 import dev.songlines.Songlines;
 import net.minecraft.client.gui.DrawContext;
@@ -39,6 +40,7 @@ public class SettingsScreen extends Screen {
                 o.add(Opts.slider(L.t("Sync offset", "Сдвиг синхронизации"), -3000, 3000, 100, () -> c.lyricsOffsetMs, v -> c.lyricsOffsetMs = (int) v, v -> (int) v + " ms"));
                 o.add(Opts.color(L.t("Text color", "Цвет текста"), () -> c.textColor, v -> c.textColor = v));
                 o.add(Opts.color(L.t("Active line color", "Цвет активной строки"), () -> c.activeColor, v -> c.activeColor = v));
+                o.add(Opts.choice(L.t("Font", "Шрифт"), () -> c.font, v -> c.font = v, Fonts::list));
                 o.add(Opts.slider(L.t("Text size", "Размер текста"), 0.5, 3.0, 0.1, () -> c.textScale, v -> c.textScale = (float) v, v -> pct(v)));
                 o.add(Opts.toggle(L.t("Shadow", "Тень"), () -> c.textShadow, v -> c.textShadow = v));
                 o.add(Opts.toggle(L.t("Bold", "Жирный"), () -> c.textBold, v -> c.textBold = v));
@@ -47,6 +49,8 @@ public class SettingsScreen extends Screen {
                 o.add(Opts.slider(L.t("Bottom height", "Высота снизу"), 30, 200, 2, () -> c.bottomOffset, v -> c.bottomOffset = (int) v, v -> (int) v + " px"));
             }
             case 1 -> {
+                o.add(Opts.slider(L.t("Distance", "Расстояние"), 2, 12, 1, () -> c.worldDistance, v -> c.worldDistance = (int) v, v -> (int) v + " m"));
+                o.add(Opts.toggle(L.t("Size by distance", "Размер от расстояния"), () -> c.worldScaleByDistance, v -> c.worldScaleByDistance = v));
                 o.add(Opts.slider(L.t("Stay time", "Время показа"), 0.5, 10, 0.1, () -> c.holdSeconds, v -> c.holdSeconds = (float) v, SettingsScreen::sec));
                 o.add(Opts.slider(L.t("Fade in", "Появление"), 0, 3, 0.1, () -> c.fadeInSeconds, v -> c.fadeInSeconds = (float) v, SettingsScreen::sec));
                 o.add(Opts.slider(L.t("Fade out", "Исчезновение"), 0, 3, 0.1, () -> c.fadeOutSeconds, v -> c.fadeOutSeconds = (float) v, SettingsScreen::sec));
