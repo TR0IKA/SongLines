@@ -72,7 +72,7 @@ public final class CoverCard {
             int barY = y + h - pad - 2;
             Gfx.fill(ctx, tx, barY, tx + textW, barY + 2, Gfx.argb(0xFFFFFF, alpha * 0.25f));
             int filled = (int) (textW * Math.min(1f, pos / (float) dur));
-            Gfx.fill(ctx, tx, barY, tx + filled, barY + 2, Gfx.argb(Config.rgb(c.activeColor, 0xFFD166), alpha));
+            Gfx.fill(ctx, tx, barY, tx + filled, barY + 2, Gfx.argb(c.activeRgb(), alpha));
             if (size >= 36) {
                 Gfx.text(ctx, Text.literal(fmt(pos) + " / " + fmt(dur)), tx, barY - 11, Gfx.argb(0x9A9A9A, alpha), false);
             }

@@ -6,16 +6,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class Dirs {
-    public static Path root, music, lyrics, config;
+    public static Path root, music, lyrics, covers, config;
 
     public static void init() {
         root = FabricLoader.getInstance().getGameDir().resolve("songlines");
         music = root.resolve("music");
         lyrics = root.resolve("lyrics");
+        covers = root.resolve("covers");
         config = root.resolve("config.json");
         try {
             Files.createDirectories(music);
             Files.createDirectories(lyrics);
+            Files.createDirectories(covers);
         } catch (IOException e) {
             Songlines.LOG.warn("cannot create dirs", e);
         }

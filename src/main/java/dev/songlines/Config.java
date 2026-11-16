@@ -7,7 +7,7 @@ import java.nio.file.Files;
 
 /** Все настройки. Хранятся в songlines/config.json (цвета можно править руками: "#RRGGBB"). */
 public final class Config {
-    public enum SubMode { BOTTOM, WORLD, PANEL, OFF }
+    public enum SubMode { BOTTOM, WORLD, ENTITY, PANEL, OFF }
     public enum Corner { TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
     public enum CardStyle { CARD, COMPACT, COVER_ONLY }
     public enum CardMode { ALWAYS, ON_CHANGE, OFF }
@@ -15,6 +15,9 @@ public final class Config {
     public enum Anim { FADE, RISE, POP, SLIDE, TYPEWRITER, NONE }
     public enum Repeat { OFF, ALL, ONE }
     public enum Source { LOCAL, BRIDGE }
+    public enum Facing { PLAYER, FIXED }
+    public enum EntityAnim { FADE, POP, TYPEWRITER, NONE }
+    public enum ColorMode { CUSTOM, COVER }
 
     // воспроизведение
     public Source source = Source.LOCAL;
@@ -34,6 +37,9 @@ public final class Config {
     public boolean textBold = false;
     public boolean textBackground = false;
     public boolean karaokeWipe = true;
+    public int wordsPerChunk = 0;          // 0 = строка целиком, иначе по N слов
+    public ColorMode colorMode = ColorMode.CUSTOM;
+    public boolean fetchCovers = true;
     public int bottomOffset = 68;
     public String font = "default"; // "default", "minecraft:uniform" или "songlines:<имя файла из songlines/fonts>"
 
@@ -44,8 +50,13 @@ public final class Config {
     public Anim anim = Anim.RISE;
     public int spreadDegrees = 18;
     public int maxFloating = 3;
-    public int worldDistance = 4;          // на каком расстоянии от камеры появляется строка (блоки)
-    public boolean worldScaleByDistance = true; // строка уменьшается/растёт с расстоянием, как табличка в мире
+
+    // "сущность": текст стоит на месте в мире и не двигается
+    public float entityDistance = 3.5f;
+    public Facing entityFacing = Facing.PLAYER; // PLAYER — всегда лицом к игроку, FIXED — лицом к игроку в момент появления
+    public EntityAnim entityAnim = EntityAnim.FADE;
+    public boolean entityHideBehindBlocks = true;
+    public boolean entityScaleByDistance = true;
 
     // панель сбоку
     public boolean panelRight = false;
@@ -73,6 +84,23 @@ public final class Config {
     };
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
+    /** Цвет активной строки: свой или основной цвет обложки. */
+    public int activeRgb() {
+        return colorMode == ColorMode.COVER ? CoverTexture.accent() : rgb(activeColor, 0xFFD166);
+    }
+
+    /** Цвет остального текста: свой или светлый оттенок цвета обложки. */
+    public int baseRgb() {
+        return colorMode == ColorMode.COVER ? mix(CoverTexture.accent(), 0xFFFFFF, 0.78f) : rgb(textColor, 0xFFFFFF);
+    }
+
+    public static int mix(int a, int b, float t) {
+        int r = Math.round(((a >> 16) & 255) * (1 - t) + ((b >> 16) & 255) * t);
+        int g = Math.round(((a >> 8) & 255) * (1 - t) + ((b >> 8) & 255) * t);
+        int bl = Math.round((a & 255) * (1 - t) + (b & 255) * t);
+        return (r << 16) | (g << 8) | bl;
+    }
 
     public static int rgb(String hex, int def) {
         try {
@@ -119,6 +147,9 @@ public final class Config {
         if (cardStyle == null) cardStyle = d.cardStyle;
         if (cardColor == null) cardColor = d.cardColor;
         if (lastFolder == null) lastFolder = "";
+        if (entityFacing == null) entityFacing = d.entityFacing;
+        if (entityAnim == null) entityAnim = d.entityAnim;
+        if (colorMode == null) colorMode = d.colorMode;
         return this;
     }
 

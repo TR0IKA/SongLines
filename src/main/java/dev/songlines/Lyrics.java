@@ -1,6 +1,7 @@
 package dev.songlines;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -53,5 +54,42 @@ public final class Lyrics {
             }
         }
         return ans;
+    }
+
+    /**
+     * Разбивает строки на группы по n слов. Слов-таймингов в LRC нет, поэтому время группам
+     * распределяется пропорционально длине (в пределах разумной длительности строки).
+     */
+    public static List<Line> chunk(List<Line> lines, int n) {
+        if (n <= 0) return lines;
+        List<Line> out = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            Line ln = lines.get(i);
+            String text = ln.text().trim();
+            if (text.isEmpty()) {
+                out.add(ln);
+                continue;
+            }
+            String[] words = text.split("\\s+");
+            if (words.length <= n) {
+                out.add(new Line(ln.ms(), text));
+                continue;
+            }
+            long next = i + 1 < lines.size() ? lines.get(i + 1).ms() : ln.ms() + 6000;
+            long avail = Math.max(300, next - ln.ms());
+            long dur = Math.min(avail, Math.max(1200, text.length() * 80L));
+            List<String> groups = new ArrayList<>();
+            for (int w = 0; w < words.length; w += n) {
+                groups.add(String.join(" ", Arrays.copyOfRange(words, w, Math.min(words.length, w + n))));
+            }
+            int total = 0;
+            for (String g : groups) total += g.length() + 1;
+            int used = 0;
+            for (String g : groups) {
+                out.add(new Line(ln.ms() + dur * used / total, g));
+                used += g.length() + 1;
+            }
+        }
+        return out;
     }
 }

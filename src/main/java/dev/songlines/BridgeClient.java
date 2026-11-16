@@ -78,14 +78,17 @@ public final class BridgeClient {
         String key = title + "\u0000" + artist;
         if (!key.equals(lastKey)) {
             lastKey = key;
+            lastCover = null;
+            CoverTexture.set(null); // убрать обложку предыдущего трека
             np.begin(title, artist, str(o, "source"));
         }
         np.sync(bool(o, "playing"), lng(o, "positionMs"), lng(o, "durationMs"));
         String cid = str(o, "coverId");
         if (!cid.equals(lastCover)) {
             lastCover = cid;
-            byte[] img = Http.getBytes(base() + "/cover", 3000);
-            CoverTexture.set(img);
+            byte[] img = cid.isEmpty() ? null : Http.getBytes(base() + "/cover", 3000);
+            if (img != null) CoverTexture.set(img);
+            else Songlines.playback.fetchOnlineCover(np.serial, title, artist);
         }
     }
 

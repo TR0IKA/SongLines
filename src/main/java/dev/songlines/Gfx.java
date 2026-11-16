@@ -18,6 +18,13 @@ public final class Gfx {
         m.scale(scale, scale);
     }
 
+    public static void pushXY(DrawContext c, float x, float y, float sx, float sy) {
+        var m = c.getMatrices();
+        m.pushMatrix();
+        m.translate(x, y);
+        m.scale(sx, sy);
+    }
+
     public static void pop(DrawContext c) {
         c.getMatrices().popMatrix();
     }

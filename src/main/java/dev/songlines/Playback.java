@@ -69,13 +69,28 @@ public final class Playback {
         np.begin(t.title, t.artist, L.t("Local", "Локально"));
         final int ser = np.serial;
         final Path path = t.path;
+        final String title = t.title, artist = t.artist;
         CompletableFuture.supplyAsync(() -> {
             byte[] c = Tags.scan(path, true).cover;
             return c != null ? c : Tags.folderCover(path);
         }).thenAccept(c -> {
-            if (np.serial == ser) CoverTexture.set(c);
+            if (np.serial != ser) return;
+            CoverTexture.set(c); // null убирает обложку предыдущего трека
+            if (c == null) fetchOnlineCover(ser, title, artist);
         });
         audio.play(path);
+    }
+
+    /** Обложка из iTunes/Deezer, если в файле её нет. */
+    public void fetchOnlineCover(int ser, String title, String artist) {
+        if (!Songlines.cfg.fetchCovers) return;
+        CoverFetcher.fetch(title, artist, bytes -> {
+            if (bytes != null) {
+                MinecraftClient.getInstance().execute(() -> {
+                    if (np.serial == ser) CoverTexture.set(bytes);
+                });
+            }
+        });
     }
 
     private void onEnded() {
@@ -168,6 +183,9 @@ public final class Playback {
                     if (np.serial == ser) {
                         np.lyrics = lines;
                         Subtitles.reset();
+                        if (lines.isEmpty() && Songlines.cfg.fetchLyrics && Songlines.cfg.subMode != Config.SubMode.OFF) {
+                            say(L.t("Lyrics not found for this track", "Текст для этого трека не найден"));
+                        }
                     }
                 }));
     }
