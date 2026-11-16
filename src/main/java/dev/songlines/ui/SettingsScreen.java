@@ -34,23 +34,21 @@ public class SettingsScreen extends Screen {
         Config c = Songlines.cfg;
         List<Opts.Opt> o = new ArrayList<>();
         switch (t) {
-            case 0 -> {
+            case 0 -> { // Текст
                 o.add(Opts.cycle(L.t("Subtitles", "Субтитры"), () -> c.subMode, v -> c.subMode = v));
+                o.add(Opts.slider(L.t("Words at once", "Слов за раз"), 0, 6, 1, () -> c.wordsPerChunk, v -> c.wordsPerChunk = (int) v,
+                        v -> (int) v == 0 ? L.t("whole line", "строка целиком") : String.valueOf((int) v)));
                 o.add(Opts.toggle(L.t("Download lyrics", "Загружать тексты"), () -> c.fetchLyrics, v -> c.fetchLyrics = v));
                 o.add(Opts.slider(L.t("Sync offset", "Сдвиг синхронизации"), -3000, 3000, 100, () -> c.lyricsOffsetMs, v -> c.lyricsOffsetMs = (int) v, v -> (int) v + " ms"));
-                o.add(Opts.color(L.t("Text color", "Цвет текста"), () -> c.textColor, v -> c.textColor = v));
-                o.add(Opts.color(L.t("Active line color", "Цвет активной строки"), () -> c.activeColor, v -> c.activeColor = v));
                 o.add(Opts.choice(L.t("Font", "Шрифт"), () -> c.font, v -> c.font = v, Fonts::list));
-                o.add(Opts.slider(L.t("Text size", "Размер текста"), 0.5, 3.0, 0.1, () -> c.textScale, v -> c.textScale = (float) v, v -> pct(v)));
+                o.add(Opts.slider(L.t("Text size", "Размер текста"), 0.5, 3.0, 0.1, () -> c.textScale, v -> c.textScale = (float) v, SettingsScreen::pct));
                 o.add(Opts.toggle(L.t("Shadow", "Тень"), () -> c.textShadow, v -> c.textShadow = v));
                 o.add(Opts.toggle(L.t("Bold", "Жирный"), () -> c.textBold, v -> c.textBold = v));
                 o.add(Opts.toggle(L.t("Background box", "Подложка"), () -> c.textBackground, v -> c.textBackground = v));
                 o.add(Opts.toggle(L.t("Karaoke fill (bottom)", "Караоке-заливка (внизу)"), () -> c.karaokeWipe, v -> c.karaokeWipe = v));
                 o.add(Opts.slider(L.t("Bottom height", "Высота снизу"), 30, 200, 2, () -> c.bottomOffset, v -> c.bottomOffset = (int) v, v -> (int) v + " px"));
             }
-            case 1 -> {
-                o.add(Opts.slider(L.t("Distance", "Расстояние"), 2, 12, 1, () -> c.worldDistance, v -> c.worldDistance = (int) v, v -> (int) v + " m"));
-                o.add(Opts.toggle(L.t("Size by distance", "Размер от расстояния"), () -> c.worldScaleByDistance, v -> c.worldScaleByDistance = v));
+            case 1 -> { // Мир (прежний всплывающий текст)
                 o.add(Opts.slider(L.t("Stay time", "Время показа"), 0.5, 10, 0.1, () -> c.holdSeconds, v -> c.holdSeconds = (float) v, SettingsScreen::sec));
                 o.add(Opts.slider(L.t("Fade in", "Появление"), 0, 3, 0.1, () -> c.fadeInSeconds, v -> c.fadeInSeconds = (float) v, SettingsScreen::sec));
                 o.add(Opts.slider(L.t("Fade out", "Исчезновение"), 0, 3, 0.1, () -> c.fadeOutSeconds, v -> c.fadeOutSeconds = (float) v, SettingsScreen::sec));
@@ -58,11 +56,23 @@ public class SettingsScreen extends Screen {
                 o.add(Opts.slider(L.t("Spread", "Разброс"), 0, 40, 1, () -> c.spreadDegrees, v -> c.spreadDegrees = (int) v, v -> (int) v + "°"));
                 o.add(Opts.slider(L.t("Lines on screen", "Строк на экране"), 1, 6, 1, () -> c.maxFloating, v -> c.maxFloating = (int) v, v -> String.valueOf((int) v)));
             }
-            case 2 -> {
+            case 2 -> { // Сущность (текст стоит на месте)
+                o.add(Opts.cycle(L.t("Facing", "Поворот"), () -> c.entityFacing, v -> c.entityFacing = v));
+                o.add(Opts.cycle(L.t("Animation", "Анимация"), () -> c.entityAnim, v -> c.entityAnim = v));
+                o.add(Opts.slider(L.t("Distance", "Расстояние"), 1.5, 8, 0.5, () -> c.entityDistance, v -> c.entityDistance = (float) v, v -> String.format("%.1f m", v)));
+                o.add(Opts.slider(L.t("Stay time", "Время показа"), 0.5, 10, 0.1, () -> c.holdSeconds, v -> c.holdSeconds = (float) v, SettingsScreen::sec));
+                o.add(Opts.slider(L.t("Fade in", "Появление"), 0, 3, 0.1, () -> c.fadeInSeconds, v -> c.fadeInSeconds = (float) v, SettingsScreen::sec));
+                o.add(Opts.slider(L.t("Fade out", "Исчезновение"), 0, 3, 0.1, () -> c.fadeOutSeconds, v -> c.fadeOutSeconds = (float) v, SettingsScreen::sec));
+                o.add(Opts.toggle(L.t("Hide behind blocks", "Прятать за блоками"), () -> c.entityHideBehindBlocks, v -> c.entityHideBehindBlocks = v));
+                o.add(Opts.toggle(L.t("Size by distance", "Размер от расстояния"), () -> c.entityScaleByDistance, v -> c.entityScaleByDistance = v));
+                o.add(Opts.slider(L.t("Spread", "Разброс"), 0, 40, 1, () -> c.spreadDegrees, v -> c.spreadDegrees = (int) v, v -> (int) v + "°"));
+                o.add(Opts.slider(L.t("Lines on screen", "Строк на экране"), 1, 6, 1, () -> c.maxFloating, v -> c.maxFloating = (int) v, v -> String.valueOf((int) v)));
+            }
+            case 3 -> { // Панель
                 o.add(Opts.toggle(L.t("Right side", "Справа"), () -> c.panelRight, v -> c.panelRight = v));
                 o.add(Opts.slider(L.t("Visible lines", "Видимых строк"), 3, 9, 2, () -> c.panelLines, v -> c.panelLines = (int) v, v -> String.valueOf((int) v)));
             }
-            case 3 -> {
+            case 4 -> { // Обложка
                 o.add(Opts.cycle(L.t("Card", "Карточка"), () -> c.cardMode, v -> c.cardMode = v));
                 o.add(Opts.slider(L.t("Show for", "Показывать"), 2, 20, 1, () -> c.cardSeconds, v -> c.cardSeconds = (float) v, v -> (int) v + " s"));
                 o.add(Opts.cycle(L.t("Corner", "Угол"), () -> c.corner, v -> c.corner = v));
@@ -71,11 +81,23 @@ public class SettingsScreen extends Screen {
                 o.add(Opts.slider(L.t("Opacity", "Непрозрачность"), 10, 100, 5, () -> c.cardOpacity, v -> c.cardOpacity = (int) v, v -> (int) v + "%"));
                 o.add(Opts.slider(L.t("Cover size", "Размер обложки"), 20, 96, 2, () -> c.coverSize, v -> c.coverSize = (int) v, v -> (int) v + " px"));
                 o.add(Opts.toggle(L.t("Progress bar", "Полоса прогресса"), () -> c.showProgress, v -> c.showProgress = v));
+                o.add(Opts.toggle(L.t("Find cover online", "Искать обложку в сети"), () -> c.fetchCovers, v -> c.fetchCovers = v));
                 o.add(Opts.toggle(L.t("Border", "Рамка"), () -> c.showBorder, v -> c.showBorder = v));
                 o.add(Opts.color(L.t("Border color", "Цвет рамки"), () -> c.borderColor, v -> c.borderColor = v));
                 o.add(Opts.slider(L.t("Margin", "Отступ"), 0, 30, 1, () -> c.margin, v -> c.margin = (int) v, v -> (int) v + " px"));
             }
-            default -> {
+            case 5 -> { // Цвет
+                o.add(Opts.cycle(L.t("Color source", "Источник цвета"), () -> c.colorMode, v -> c.colorMode = v));
+                o.add(Opts.color(L.t("Active: preset", "Активная: пресет"), () -> c.activeColor, v -> c.activeColor = v));
+                o.add(Opts.rgbSlider(L.t("Active: red", "Активная: красный"), 16, () -> c.activeColor, v -> c.activeColor = v));
+                o.add(Opts.rgbSlider(L.t("Active: green", "Активная: зелёный"), 8, () -> c.activeColor, v -> c.activeColor = v));
+                o.add(Opts.rgbSlider(L.t("Active: blue", "Активная: синий"), 0, () -> c.activeColor, v -> c.activeColor = v));
+                o.add(Opts.color(L.t("Text: preset", "Текст: пресет"), () -> c.textColor, v -> c.textColor = v));
+                o.add(Opts.rgbSlider(L.t("Text: red", "Текст: красный"), 16, () -> c.textColor, v -> c.textColor = v));
+                o.add(Opts.rgbSlider(L.t("Text: green", "Текст: зелёный"), 8, () -> c.textColor, v -> c.textColor = v));
+                o.add(Opts.rgbSlider(L.t("Text: blue", "Текст: синий"), 0, () -> c.textColor, v -> c.textColor = v));
+            }
+            default -> { // Ещё
                 o.add(Opts.slider(L.t("Volume", "Громкость"), 0, 1, 0.05, () -> c.volume, v -> c.volume = (float) v, SettingsScreen::pct));
                 o.add(Opts.toggle(L.t("Shuffle", "Перемешать"), () -> c.shuffle, v -> c.shuffle = v));
                 o.add(Opts.cycle(L.t("Repeat", "Повтор"), () -> c.repeat, v -> c.repeat = v));
@@ -86,7 +108,7 @@ public class SettingsScreen extends Screen {
 
     @Override
     protected void init() {
-        String[] names = {L.t("Text", "Текст"), L.t("World", "Мир"), L.t("Panel", "Панель"), L.t("Cover", "Обложка"), L.t("More", "Ещё")};
+        String[] names = {L.t("Text", "Текст"), L.t("World", "Мир"), L.t("Ent.", "Сущн."), L.t("Panel", "Панель"), L.t("Cover", "Обл."), L.t("Color", "Цвет"), L.t("More", "Ещё")};
         int tw = (width - 12) / names.length;
         for (int i = 0; i < names.length; i++) {
             final int ti = i;

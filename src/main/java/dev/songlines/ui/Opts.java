@@ -73,6 +73,18 @@ public final class Opts {
         }).dimensions(x, y, w, 20).build();
     }
 
+    /** Ползунок одного канала (shift: 16 = R, 8 = G, 0 = B) для цвета в формате "#RRGGBB". */
+    public static Opt rgbSlider(String label, int shift, Supplier<String> g, Consumer<String> s) {
+        return slider(label, 0, 255, 1,
+                () -> (Config.rgb(g.get(), 0) >> shift) & 255,
+                v -> {
+                    int rgb = Config.rgb(g.get(), 0);
+                    rgb = (rgb & ~(255 << shift)) | (((int) v & 255) << shift);
+                    s.accept(String.format("#%06X", rgb));
+                },
+                v -> String.valueOf((int) v));
+    }
+
     public static Opt slider(String label, double min, double max, double step,
                              DoubleSupplier g, DoubleConsumer s, DoubleFunction<String> fmt) {
         return (x, y, w) -> new ValueSlider(x, y, w, 20, label, min, max, step, g, s, fmt);
