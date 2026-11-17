@@ -83,6 +83,7 @@ public class SettingsScreen extends Screen {
                 o.add(Opts.toggle(L.t("Progress bar", "Полоса прогресса"), () -> c.showProgress, v -> c.showProgress = v));
                 o.add(Opts.toggle(L.t("Find cover online", "Искать обложку в сети"), () -> c.fetchCovers, v -> c.fetchCovers = v));
                 o.add(Opts.toggle(L.t("Border", "Рамка"), () -> c.showBorder, v -> c.showBorder = v));
+                o.add(Opts.cycle(L.t("Border source", "Источник цвета рамки"), () -> c.borderMode, v -> c.borderMode = v));
                 o.add(Opts.color(L.t("Border color", "Цвет рамки"), () -> c.borderColor, v -> c.borderColor = v));
                 o.add(Opts.slider(L.t("Margin", "Отступ"), 0, 30, 1, () -> c.margin, v -> c.margin = (int) v, v -> (int) v + " px"));
             }
