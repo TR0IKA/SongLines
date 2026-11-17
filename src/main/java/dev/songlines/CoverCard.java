@@ -42,7 +42,7 @@ public final class CoverCard {
             Gfx.fill(ctx, x + 1, y, x + w - 1, y + h, bg); // скруглённые углы в 1 пиксель
             Gfx.fill(ctx, x, y + 1, x + w, y + h - 1, bg);
             if (c.showBorder) {
-                int bc = Gfx.argb(Config.rgb(c.borderColor, 0xFFFFFF), alpha);
+                int bc = Gfx.argb(c.borderRgb(), alpha);
                 Gfx.fill(ctx, x + 1, y, x + w - 1, y + 1, bc);
                 Gfx.fill(ctx, x + 1, y + h - 1, x + w - 1, y + h, bc);
                 Gfx.fill(ctx, x, y + 1, x + 1, y + h - 1, bc);

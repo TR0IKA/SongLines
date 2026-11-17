@@ -67,6 +67,7 @@ public final class Playback {
         Track t = queue.get(qi);
         current = t;
         np.begin(t.title, t.artist, L.t("Local", "Локально"));
+        CoverTexture.info(L.t("looking in file…", "ищу в файле…"));
         final int ser = np.serial;
         final Path path = t.path;
         final String title = t.title, artist = t.artist;
@@ -75,22 +76,34 @@ public final class Playback {
             return c != null ? c : Tags.folderCover(path);
         }).thenAccept(c -> {
             if (np.serial != ser) return;
+            if (c != null) CoverTexture.info(L.t("from file, ", "из файла, ") + (c.length / 1024) + " KB");
             CoverTexture.set(c); // null убирает обложку предыдущего трека
-            if (c == null) fetchOnlineCover(ser, title, artist);
+            if (c == null) {
+                CoverTexture.info(L.t("none in file → online", "в файле нет → сеть"));
+                fetchOnlineCover(ser, title, artist);
+            }
         });
         audio.play(path);
     }
 
-    /** Обложка из iTunes/Deezer, если в файле её нет. */
+    /** Обложка из iTunes/Deezer, если в файле её нет. Ход поиска виден в меню M (строка «Cover:»). */
     public void fetchOnlineCover(int ser, String title, String artist) {
-        if (!Songlines.cfg.fetchCovers) return;
-        CoverFetcher.fetch(title, artist, bytes -> {
-            if (bytes != null) {
-                MinecraftClient.getInstance().execute(() -> {
-                    if (np.serial == ser) CoverTexture.set(bytes);
+        if (!Songlines.cfg.fetchCovers) {
+            CoverTexture.info(L.t("online search is off in settings", "поиск в сети выключен в настройках"));
+            return;
+        }
+        MinecraftClient mc = MinecraftClient.getInstance();
+        CoverFetcher.fetch(title, artist,
+                s -> mc.execute(() -> {
+                    if (np.serial == ser) CoverTexture.info(s);
+                }),
+                bytes -> {
+                    if (bytes != null) {
+                        mc.execute(() -> {
+                            if (np.serial == ser) CoverTexture.set(bytes);
+                        });
+                    }
                 });
-            }
-        });
     }
 
     private void onEnded() {

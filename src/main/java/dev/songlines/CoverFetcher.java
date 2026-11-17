@@ -22,29 +22,71 @@ public final class CoverFetcher {
         return t;
     });
 
-    public static void fetch(String title, String artist, Consumer<byte[]> cb) {
+    /** status получает ход поиска («iTunes: найдено», ошибки сети и т.п.) — он показывается в меню M. */
+    public static void fetch(String title, String artist, Consumer<String> status, Consumer<byte[]> cb) {
         EX.execute(() -> {
             byte[] r = null;
             try {
-                r = load(title, artist == null ? "" : artist);
+                r = load(title, artist == null ? "" : artist, status);
             } catch (Throwable t) {
                 Songlines.LOG.debug("cover fetch failed", t);
+                status.accept(L.t("online error: ", "ошибка сети: ") + brief(t));
             }
             cb.accept(r);
         });
     }
 
-    private static byte[] load(String title, String artist) throws Exception {
-        if (title == null || title.isBlank()) return null;
+    private static byte[] load(String title, String artist, Consumer<String> status) throws Exception {
+        if (title == null || title.isBlank()) {
+            status.accept(L.t("no title to search", "нет названия для поиска"));
+            return null;
+        }
         Path cache = Dirs.covers.resolve(sha1(title + "\u0000" + artist) + ".jpg");
-        if (Files.isRegularFile(cache)) return Files.readAllBytes(cache);
+        if (Files.isRegularFile(cache)) {
+            byte[] c = Files.readAllBytes(cache);
+            status.accept(L.t("from cache, ", "из кэша, ") + (c.length / 1024) + " KB");
+            return c;
+        }
 
-        String url = itunes(title, artist);
-        if (url == null) url = deezer(title, artist);
-        if (url == null) return null;
-        byte[] b = Http.getBytes(url, 8000);
-        if (b != null && b.length > 500) Files.write(cache, b);
+        status.accept(L.t("online: searching…", "сеть: ищу…"));
+        String url = null, via = "", err = "";
+        try {
+            url = itunes(title, artist);
+            if (url != null) via = "iTunes";
+        } catch (Throwable t) {
+            err += " iTunes: " + brief(t);
+        }
+        if (url == null) {
+            try {
+                url = deezer(title, artist);
+                if (url != null) via = "Deezer";
+            } catch (Throwable t) {
+                err += " Deezer: " + brief(t);
+            }
+        }
+        if (url == null) {
+            status.accept(L.t("online: not found", "сеть: не найдено") + err);
+            return null;
+        }
+        byte[] b = null;
+        try {
+            b = Http.getBytes(url, 8000);
+        } catch (Throwable t) {
+            err += " " + brief(t);
+        }
+        if (b == null || b.length < 500) {
+            status.accept(L.t("online (", "сеть (") + via + L.t("): image download failed", "): картинка не скачалась") + err);
+            return null;
+        }
+        Files.write(cache, b);
+        status.accept(L.t("online (", "сеть (") + via + "), " + (b.length / 1024) + " KB");
         return b;
+    }
+
+    private static String brief(Throwable t) {
+        String m = t.getMessage();
+        String s = t.getClass().getSimpleName() + (m == null ? "" : ": " + m);
+        return s.length() > 70 ? s.substring(0, 70) : s;
     }
 
     private static String itunes(String title, String artist) throws Exception {

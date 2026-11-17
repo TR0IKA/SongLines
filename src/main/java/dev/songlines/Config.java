@@ -74,6 +74,8 @@ public final class Config {
     public boolean showProgress = true;
     public boolean showBorder = false;
     public String borderColor = "#FFFFFF";
+    /** Цвет рамки: свой или основной цвет обложки. */
+    public ColorMode borderMode = ColorMode.COVER;
     public int margin = 6;
 
     // мост (приложение на телефоне/ПК, сообщает что играет)
@@ -93,6 +95,11 @@ public final class Config {
     /** Цвет остального текста: свой или светлый оттенок цвета обложки. */
     public int baseRgb() {
         return colorMode == ColorMode.COVER ? mix(CoverTexture.accent(), 0xFFFFFF, 0.78f) : rgb(textColor, 0xFFFFFF);
+    }
+
+    /** Цвет рамки карточки: свой или основной цвет обложки. */
+    public int borderRgb() {
+        return borderMode == ColorMode.COVER ? CoverTexture.accent() : rgb(borderColor, 0xFFFFFF);
     }
 
     public static int mix(int a, int b, float t) {
@@ -150,6 +157,7 @@ public final class Config {
         if (entityFacing == null) entityFacing = d.entityFacing;
         if (entityAnim == null) entityAnim = d.entityAnim;
         if (colorMode == null) colorMode = d.colorMode;
+        if (borderMode == null) borderMode = d.borderMode;
         return this;
     }
 

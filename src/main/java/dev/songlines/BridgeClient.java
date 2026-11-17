@@ -86,9 +86,23 @@ public final class BridgeClient {
         String cid = str(o, "coverId");
         if (!cid.equals(lastCover)) {
             lastCover = cid;
-            byte[] img = cid.isEmpty() ? null : Http.getBytes(base() + "/cover", 3000);
-            if (img != null) CoverTexture.set(img);
-            else Songlines.playback.fetchOnlineCover(np.serial, title, artist);
+            byte[] img = null;
+            if (!cid.isEmpty()) {
+                CoverTexture.info(L.t("loading from bridge…", "загружаю с моста…"));
+                try {
+                    img = Http.getBytes(base() + "/cover", 3000);
+                } catch (Exception e) {
+                    // ошибка обложки не должна рвать связь с мостом
+                    Songlines.LOG.debug("bridge cover failed", e);
+                }
+            }
+            if (img != null) {
+                CoverTexture.info(L.t("from bridge, ", "с моста, ") + (img.length / 1024) + " KB");
+                CoverTexture.set(img);
+            } else {
+                CoverTexture.info(L.t("bridge has no cover → online", "на мосте нет обложки → сеть"));
+                Songlines.playback.fetchOnlineCover(np.serial, title, artist);
+            }
         }
     }
 
