@@ -68,7 +68,7 @@ SongLinesBridge — отдельное Android-приложение для по�
 - переключение треков;
 - пауза и возобновление.
 
-"SongLinesBridge — репозиторий и загрузки" (https://github.com/TR0IKA/SongLinesBridge)
+[SongLinesBridge — репозиторий и загрузки](https://github.com/TR0IKA/SongLinesBridge)
 
 Установка
 
