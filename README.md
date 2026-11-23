@@ -137,8 +137,8 @@ songlines/
 
 ---
 
-Автор: "TR0IKA" (https://github.com/TR0IKA)
+Автор: [TR0IKA](https://github.com/TR0IKA)
 
-Основной проект: "SongLines" (https://github.com/TR0IKA/SongLines)
+Основной проект: [SongLines](https://github.com/TR0IKA/SongLines)
 
-Мост для Android: "SongLinesBridge" (https://github.com/TR0IKA/SongLinesBridge)
+Мост для Android: [SongLinesBridge](https://github.com/TR0IKA/SongLinesBridge)
